@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>地鶏研修 振り返りテスト | AP Holdings</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700;900&display=swap');
+  :root {
+    --primary:#C8491A; --primary-dark:#9E3512; --accent:#F5A623;
+    --bg:#FBF7F2; --card:#FFFFFF; --text:#1A1208; --text-sub:#6B5740;
+    --border:#E8D9C8; --correct:#2E7D4F; --wrong:#C0392B;
+    --correct-bg:#E8F5EE; --wrong-bg:#FDECEA;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:'Noto Sans JP',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+
+  /* HEADER */
+  header{background:var(--primary);color:#fff;padding:20px 24px 16px;position:relative;overflow:hidden}
+  header::before{content:'';position:absolute;right:-30px;top:-30px;width:180px;height:180px;border-radius:50%;background:rgba(255,255,255,.07)}
+  .header-label{font-size:11px;font-weight:700;letter-spacing:.18em;opacity:.8;margin-bottom:6px}
+  header h1{font-size:22px;font-weight:900;line-height:1.3}
+  .header-sub{font-size:12px;opacity:.75;margin-top:6px}
+
+  /* TIMER */
+  .timer-bar{background:var(--primary-dark);padding:10px 24px;display:flex;align-items:center;gap:10px;color:#fff}
+  .timer-icon{font-size:18px}
+  .timer-label{font-size:12px;opacity:.8;flex:1}
+  #timer-display{font-size:28px;font-weight:900;font-variant-numeric:tabular-nums;letter-spacing:.05em}
+  #timer-display.warning{color:var(--accent);animation:pulse 1s infinite}
+  #timer-display.danger{color:#FF7777;animation:pulse .5s infinite}
+  @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+  .timer-btn{padding:6px 16px;border-radius:20px;border:2px solid rgba(255,255,255,.5);background:transparent;color:#fff;font-family:inherit;font-size:12px;font-weight:700;cursor:pointer;transition:all .2s}
+  .timer-btn:hover{background:rgba(255,255,255,.15)}
+
+  /* PROGRESS */
+  .progress-wrap{background:var(--primary-dark);padding:0 24px 12px}
+  .progress-track{height:4px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden}
+  .progress-fill{height:100%;background:var(--accent);border-radius:2px;transition:width .4s ease;width:0%}
+  .progress-text{color:rgba(255,255,255,.7);font-size:11px;margin-top:5px;text-align:right}
+
+  main{padding:20px 16px 40px;max-width:720px;margin:0 auto}
+
+  /* SECTION */
+  .section-head{display:flex;align-items:center;gap:10px;margin:24px 0 14px}
+  .section-badge{background:var(--primary);color:#fff;font-size:10px;font-weight:900;letter-spacing:.12em;padding:3px 10px;border-radius:20px}
+  .section-title{font-size:14px;font-weight:700;color:var(--text-sub)}
+
+  /* Q CARD */
+  .q-card{background:var(--card);border-radius:12px;border:1.5px solid var(--border);padding:18px 18px 16px;margin-bottom:14px;transition:border-color .2s}
+  .q-card.answered-correct{border-color:var(--correct);background:var(--correct-bg)}
+  .q-card.answered-wrong{border-color:var(--wrong);background:var(--wrong-bg)}
+  .q-meta{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+  .q-num{width:26px;height:26px;background:var(--primary);color:#fff;border-radius:50%;font-size:12px;font-weight:900;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+  .q-type{font-size:10px;font-weight:700;color:var(--primary);border:1.5px solid var(--primary);border-radius:4px;padding:1px 6px}
+  .q-type.free-type{color:#2E7D4F;border-color:#2E7D4F}
+  .q-text{font-size:14px;font-weight:500;line-height:1.75;margin-bottom:14px}
+  .q-note{font-size:11px;color:var(--text-sub);background:#f5f5f5;border-radius:6px;padding:5px 10px;margin-top:-8px;margin-bottom:12px}
+
+  /* FILL */
+  .blank-input{display:inline-block;border:none;border-bottom:2.5px solid var(--primary);background:transparent;font-family:inherit;font-size:14px;font-weight:700;color:var(--primary);min-width:60px;max-width:130px;text-align:center;padding:0 4px;outline:none;transition:border-color .2s}
+  .blank-input:focus{border-color:var(--accent)}
+  .blank-input.correct-input{border-color:var(--correct);color:var(--correct)}
+  .blank-input.wrong-input{border-color:var(--wrong);color:var(--wrong)}
+  .fill-submit{padding:8px 20px;border-radius:20px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:13px;font-weight:700;cursor:pointer;transition:background .2s;margin-top:8px}
+  .fill-submit:hover{background:var(--primary-dark)}
+  .fill-submit:disabled{background:#ccc;cursor:default}
+
+  /* CHOICE */
+  .choices{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:2px}
+  .choice-btn{padding:10px 12px;border-radius:8px;border:1.5px solid var(--border);background:var(--bg);font-family:inherit;font-size:13px;font-weight:500;cursor:pointer;text-align:left;line-height:1.4;transition:all .15s}
+  .choice-btn:hover:not(:disabled){border-color:var(--primary);background:#FFF0EB}
+  .choice-btn.selected-correct{background:var(--correct-bg);border-color:var(--correct);color:var(--correct);font-weight:700}
+  .choice-btn.selected-wrong{background:var(--wrong-bg);border-color:var(--wrong);color:var(--wrong)}
+  .choice-btn.reveal-correct{background:var(--correct-bg);border-color:var(--correct);color:var(--correct);font-weight:700}
+  .choice-btn:disabled{cursor:default}
+
+  /* FEEDBACK */
+  .feedback{margin-top:10px;padding:8px 12px;border-radius:8px;font-size:12px;line-height:1.6;display:none}
+  .feedback.show{display:block}
+  .feedback.correct-fb{background:#D4EDDA;color:var(--correct)}
+  .feedback.wrong-fb{background:#F8D7DA;color:var(--wrong)}
+  .feedback strong{font-weight:900}
+
+  /* FREE TEXT QUESTION */
+  .free-textarea{width:100%;padding:12px;border-radius:10px;border:1.5px solid var(--border);font-family:inherit;font-size:14px;line-height:1.8;resize:vertical;min-height:130px;outline:none;transition:border-color .2s;background:#fafafa}
+  .free-textarea:focus{border-color:var(--correct);background:#fff}
+  .char-counter{font-size:12px;color:var(--text-sub);margin-top:6px;text-align:right;transition:color .2s}
+  .char-counter.enough{color:var(--correct);font-weight:700}
+  .char-counter.not-enough{color:var(--wrong)}
+  .free-submit{padding:10px 28px;border-radius:24px;border:none;background:var(--correct);color:#fff;font-family:inherit;font-size:14px;font-weight:700;cursor:pointer;margin-top:10px;transition:opacity .2s,background .2s}
+  .free-submit:hover{opacity:.85}
+  .free-submit:disabled{background:#aaa;cursor:default;opacity:1}
+  .free-feedback{margin-top:12px;padding:14px 16px;border-radius:10px;font-size:13px;line-height:1.8;display:none}
+  .free-feedback.show{display:block}
+  .free-feedback.pass{background:#E8F5EE;border:1.5px solid var(--correct);color:#1b5e20}
+  .free-feedback.fail{background:#FFF3E0;border:1.5px solid #FFA726;color:#e65100}
+
+  /* RESULT */
+  #result-screen{display:none;text-align:center;padding:30px 20px}
+  #result-screen.show{display:block}
+  .result-ring{width:130px;height:130px;border-radius:50%;background:conic-gradient(var(--primary) 0deg,var(--border) 0deg);display:flex;align-items:center;justify-content:center;margin:0 auto 20px;position:relative}
+  .result-ring::before{content:'';width:100px;height:100px;background:var(--bg);border-radius:50%;position:absolute}
+  .result-score{position:relative;z-index:1;font-size:32px;font-weight:900;color:var(--primary)}
+  .result-label{font-size:12px;color:var(--text-sub);font-weight:700}
+  .result-title{font-size:22px;font-weight:900;margin-bottom:8px}
+  .result-msg{font-size:14px;color:var(--text-sub);line-height:1.7;margin-bottom:24px;white-space:pre-line}
+  .result-breakdown{background:var(--card);border-radius:12px;border:1.5px solid var(--border);padding:16px;text-align:left;margin-bottom:24px}
+  .rb-title{font-size:12px;font-weight:700;color:var(--text-sub);margin-bottom:10px}
+  .rb-row{display:flex;justify-content:space-between;font-size:13px;padding:5px 0;border-bottom:1px solid var(--border)}
+  .rb-row:last-child{border-bottom:none}
+  .rb-correct{color:var(--correct);font-weight:700}
+  .rb-wrong{color:var(--wrong);font-weight:700}
+  .retry-btn{padding:14px 40px;border-radius:30px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:15px;font-weight:900;cursor:pointer;transition:background .2s}
+  .retry-btn:hover{background:var(--primary-dark)}
+
+  /* START */
+  #start-screen{text-align:center;padding:40px 20px}
+  .start-icon{font-size:60px;margin-bottom:16px}
+  .start-title{font-size:20px;font-weight:900;margin-bottom:8px}
+  .start-desc{font-size:13px;color:var(--text-sub);line-height:1.8;margin-bottom:24px}
+  .start-info{display:flex;gap:16px;justify-content:center;margin-bottom:28px;flex-wrap:wrap}
+  .info-chip{background:var(--card);border:1.5px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;font-weight:700}
+  .info-chip span{color:var(--primary)}
+  .start-btn{padding:16px 48px;border-radius:30px;border:none;background:var(--primary);color:#fff;font-family:inherit;font-size:16px;font-weight:900;cursor:pointer;transition:background .2s,transform .1s;box-shadow:0 4px 16px rgba(200,73,26,.35)}
+  .start-btn:hover{background:var(--primary-dark);transform:translateY(-1px)}
+  #quiz-area{display:none}
+  #quiz-area.show{display:block}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-label">AP Holdings 新卒研修</div>
+  <h1>🐓 地鶏研修<br>振り返りテスト</h1>
+  <div class="header-sub">制限時間10分 ／ 全15問＋記述問題</div>
+</header>
+
+<div class="timer-bar" id="timer-bar" style="display:none">
+  <div class="timer-icon">⏱</div>
+  <div class="timer-label">残り時間</div>
+  <div id="timer-display">10:00</div>
+  <button class="timer-btn" id="pause-btn">一時停止</button>
+</div>
+<div class="progress-wrap" id="progress-wrap" style="display:none">
+  <div class="progress-track"><div class="progress-fill" id="progress-fill"></div></div>
+  <div class="progress-text" id="progress-text">0 / 15 問回答済み</div>
+</div>
+
+<main>
+
+<!-- START -->
+<div id="start-screen">
+  <div class="start-icon">🐓</div>
+  <div class="start-title">地鶏研修 振り返りテスト</div>
+  <div class="start-desc">
+    今日の研修で学んだ内容を確認しよう！<br>
+    塚田農場の地鶏ビジネスの仕組みと<br>「命のリレー」をしっかり答えられるかな？<br>
+    最後は<strong>自分の言葉で</strong>記述する問題があります。
+  </div>
+  <div class="start-info">
+    <div class="info-chip">問題数 <span>15問</span></div>
+    <div class="info-chip">制限時間 <span>10分</span></div>
+    <div class="info-chip">最後 <span>記述問題あり</span></div>
+  </div>
+  <button class="start-btn" onclick="startQuiz()">テスト開始！</button>
+</div>
+
+<!-- QUIZ -->
+<div id="quiz-area">
+  <div id="sections-container"></div>
+
+  <!-- 記述問題（最終） -->
+  <div class="section-head">
+    <span class="section-badge" style="background:#2E7D4F">FINAL</span>
+    <span class="section-title">✍️ 記述問題</span>
+  </div>
+  <div class="q-card" id="card-free">
+    <div class="q-meta">
+      <div class="q-num" style="background:#2E7D4F">✍</div>
+      <div class="q-type free-type">記述</div>
+    </div>
+    <div class="q-text">
+      今日の研修を通じて、あなたにとって<strong>「いただきます」</strong>とはどういう意味ですか？<br>
+      自分の言葉でしっかり書いてみよう。
+    </div>
+    <div class="q-note">💡 100文字以上で「しっかり語れた！」と判定されます。</div>
+    <textarea class="free-textarea" id="free-answer" placeholder="例）いただきますとは、食べ物になった命へ感謝を伝える言葉だと思います。塚田農場では生産者が命をかけて育てた地鶏を…" oninput="onFreeInput()"></textarea>
+    <div class="char-counter" id="char-counter">0 / 100文字</div>
+    <button class="free-submit" id="free-submit-btn" onclick="checkFree()" disabled>判定する</button>
+    <div class="free-feedback" id="free-feedback"></div>
+  </div>
+
+  <div style="text-align:center;margin-top:24px">
+    <button class="retry-btn" onclick="submitAll()" style="background:#2E7D4F">📝 採点する</button>
+  </div>
+</div>
+
+<!-- RESULT -->
+<div id="result-screen">
+  <div class="result-ring" id="result-ring">
+    <div>
+      <div class="result-score" id="result-score">0/15</div>
+      <div class="result-label">正解</div>
+    </div>
+  </div>
+  <div class="result-title" id="result-title">お疲れさまでした！</div>
+  <div class="result-msg" id="result-msg"></div>
+  <div class="result-breakdown" id="result-breakdown"></div>
+  <button class="retry-btn" onclick="retryQuiz()">🔄 もう一度挑戦する</button>
+</div>
+
+</main>
+
+<script>
+const TOTAL_TIME = 600;
+const FREE_MIN_CHARS = 100; // 判定閾値
+let timeLeft = TOTAL_TIME;
+let timerInterval = null;
+let timerRunning = false;
+let scores = {};
+
+// ── 問題データ ──────────────────────────────
+const questions = [
+  {
+    section: '🏭 ビジネスモデル・差別化',
+    items: [
+      {
+        id:'q1', type:'fill',
+        text:'塚田農場のビジネスモデルは、生産から販売まで一貫して行う「生販【　①　】モデル」と呼ばれる。',
+        blanks:[{key:'a',answer:'直結',width:60}],
+        hint:'中間業者を挟まず、生産と販売を直接つなぐことを意味します。'
+      },
+      {
+        id:'q2', type:'choice',
+        text:'従来の食材流通では、生産者から店舗に届くまでの一羽あたりの価格として正しい流れはどれか？',
+        note:'※価格は研修資料上のイメージ数値です。',
+        choices:['2,000円→2,800円→3,600円→4,500円','1,000円→2,000円→3,000円→5,000円','2,000円→3,000円→4,000円→6,000円','1,500円→2,500円→3,500円→4,500円'],
+        answer:0,
+        hint:'生産者2,000円→農協→問屋→業者を経て4,500円になるイメージです。'
+      },
+      {
+        id:'q3', type:'choice',
+        text:'APの生販直結モデルにおける客単価（当時）として正しいものはどれか？',
+        choices:['従来と同じ6,000円で変わらない','3,600円（当時）に抑えられ、かつ価格が安定している','2,100円と大幅に安くなっている','8,000円と高くなっている'],
+        answer:1,
+        hint:'中間コスト削減により、3,600円（当時）で安定提供できています。'
+      },
+      {
+        id:'q4', type:'fill',
+        text:'生販直結モデルにより、地方に加工センターを設けることで【　②　】の促進にも貢献している。',
+        blanks:[{key:'a',answer:'雇用',width:50}],
+        hint:'社会的意義のあるビジネスモデルの一側面です。'
+      },
+      {
+        id:'q16', type:'choice',
+        text:'研修資料（H30年度調査）における地鶏出荷羽数ランキングで、APが主に扱う「みやざき地頭鶏」は全国何位か？',
+        choices:['2位','3位','5位','7位'],
+        answer:2,
+        hint:'1位は阿波尾鶏（約207万羽）、5位がみやざき地頭鶏（約50万羽）です。'
+      },
+    ]
+  },
+  {
+    section: '🐔 地鶏の定義・種類',
+    items: [
+      {
+        id:'q5', type:'fill',
+        text:'JAS規格において、地鶏は在来種由来の血液百分率が【　③　】%以上であり、飼育期間が【　④　】日以上であることが条件とされる。',
+        blanks:[{key:'a',answer:'50',width:40},{key:'b',answer:'75',width:40}],
+        hint:'「50%・75日」がJAS規格の基準です。'
+      },
+      {
+        id:'q6', type:'choice',
+        text:'みやざき地頭鶏のオスとメスの飼育期間として正しいものはどれか？',
+        choices:['オス75日・メス90日','オス100日・メス120日','オス120日・メス150日','オス150日・メス180日'],
+        answer:2,
+        hint:'JAS基準の75日より大幅に長い期間をかけて育てます。'
+      },
+      {
+        id:'q7', type:'choice',
+        text:'ブロイラーについての説明として正しいものはどれか？',
+        choices:['在来種100%の高品質な品種','平飼いで自由に運動させる飼育方法の鶏','短期間で急速成長させるよう作られた食肉専用の品種','天然記念物に指定されている希少な品種'],
+        answer:2,
+        hint:'ブロイラーは40〜50日で成鶏に達します。地鶏と比べると大きな違いです。'
+      },
+      {
+        id:'q8', type:'fill',
+        text:'地鶏の飼育方法は「【　⑤　】飼い」と呼ばれ、鶏が地面を自由に運動できる状態を指す。',
+        blanks:[{key:'a',answer:'平',width:40}],
+        hint:'ケージ飼いとは対照的な飼育方法です。'
+      },
+    ]
+  },
+  {
+    section: '🔄 命のリレー',
+    items: [
+      {
+        id:'q9', type:'choice',
+        text:'「命のリレー」の正しい順番はどれか？',
+        choices:['命を育てる→命を与える→命を断つ→命を伝える','命を与える→命を育てる→命を断つ→命を伝える','命を断つ→命を与える→命を育てる→命を伝える','命を与える→命を断つ→命を育てる→命を伝える'],
+        answer:1,
+        hint:'ひなの孵化から始まり、農場→処理→店舗の順です。'
+      },
+      {
+        id:'q11', type:'choice',
+        text:'処理加工センターで「屠殺」でなく「放血」という言葉を使う理由は何か？',
+        choices:['法律上、屠殺という言葉の使用が禁止されているから','血を抜くことで肉を美味しくするという目的があるから','お客様への配慮でやわらかい表現にしているから','処理の時間が短縮されるから'],
+        answer:1,
+        hint:'品質向上のための重要な工程です。'
+      },
+      {
+        id:'q17', type:'choice',
+        text:'契約農家（生産者）が店舗スタッフに最も伝えたいこととして、研修で紹介されていたものはどれか？',
+        choices:['少しでも早く、多く出荷してほしい','自分たちの仕事・産地を知ってほしい、店舗がいつまでも存続してほしい','炭火焼の調理方法を正確に守ってほしい','地鶏の価格を他店より高く設定してほしい'],
+        answer:1,
+        hint:'生産者の「願い」と「想い」に関するスライドの内容です。'
+      },
+    ]
+  },
+  {
+    section: '📊 数字と経営感覚',
+    items: [
+      {
+        id:'q12', type:'choice',
+        text:'塚田農場全体で地鶏炭火焼を注文するのは、平均で100組中何組か？',
+        choices:['30組','45組','60組','75組'],
+        answer:2,
+        hint:'研修の「確認」スライドで紹介された数字です。'
+      },
+      {
+        id:'q14', type:'choice',
+        text:'APが考える6次産業の本質として、最も正しい考え方はどれか？',
+        choices:['1次＋2次＋3次の足し算で成り立つ','1次×2次×3次の掛け算で成り立つ（一つでも0なら全体が0になる）','3次産業（飲食店）だけで独立して成り立つ','2次産業（加工）が最も重要で他は補助的な役割'],
+        answer:[0,1],
+        hint:'足し算でも「6」になりますが、APが大切にしているのは掛け算の考え方。どれか一つが0になると全体もゼロになる、という意識が重要です。'
+      },
+      {
+        id:'q15', type:'fill',
+        text:'6次産業の掛け算の考え方では、一次・二次・三次産業のどれか一つが【　⑥　】になると全体が成り立たなくなる。だから「私たち（店舗）が0じゃあ意味がない」という言葉につながる。',
+        blanks:[{key:'a',answer:'0（ゼロ）',width:80,accept:['0','ゼロ','零','0（ゼロ）']}],
+        hint:'掛け算の性質がそのままビジネスの教えになっています。'
+      },
+    ]
+  }
+];
+
+// ── 記述問題：文字数カウント ────────────────
+function onFreeInput() {
+  const val = document.getElementById('free-answer').value;
+  const len = val.replace(/\s/g,'').length; // 空白除いてカウント
+  const counter = document.getElementById('char-counter');
+  const btn = document.getElementById('free-submit-btn');
+  counter.textContent = `${len} / ${FREE_MIN_CHARS}文字`;
+  if (len >= FREE_MIN_CHARS) {
+    counter.className = 'char-counter enough';
+    btn.disabled = false;
+  } else {
+    counter.className = 'char-counter not-enough';
+    btn.disabled = true;
+  }
+}
+
+function checkFree() {
+  const val = document.getElementById('free-answer').value;
+  const len = val.replace(/\s/g,'').length;
+  const card = document.getElementById('card-free');
+  const fb   = document.getElementById('free-feedback');
+  const btn  = document.getElementById('free-submit-btn');
+  const ta   = document.getElementById('free-answer');
+
+  btn.disabled = true;
+  ta.disabled = true;
+
+  if (len >= FREE_MIN_CHARS) {
+    card.classList.add('answered-correct');
+    fb.className = 'free-feedback show pass';
+    fb.innerHTML = `✅ <strong>しっかり語れた！（${len}文字）</strong><br>自分の言葉で「いただきます」の意味を表現できました。その言葉を大切に、お客様へ命をつないでください。`;
+    scores['free'] = true;
+  } else {
+    card.classList.add('answered-wrong');
+    fb.className = 'free-feedback show fail';
+    fb.innerHTML = `✏️ <strong>もう少し！（${len}文字）</strong><br>あと${FREE_MIN_CHARS - len}文字、自分の言葉で深めてみよう。研修で感じたこと、気づいたことを素直に書いてください。`;
+    scores['free'] = false;
+  }
+  updateProgress();
+}
+
+// ── クイズ描画 ───────────────────────────────
+function buildQuiz() {
+  const container = document.getElementById('sections-container');
+  container.innerHTML = '';
+  let qGlobal = 0;
+
+  questions.forEach((section, si) => {
+    const secHead = document.createElement('div');
+    secHead.className = 'section-head';
+    secHead.innerHTML = `<span class="section-badge">SECTION ${si+1}</span><span class="section-title">${section.section}</span>`;
+    container.appendChild(secHead);
+
+    section.items.forEach(q => {
+      qGlobal++;
+      const card = document.createElement('div');
+      card.className = 'q-card';
+      card.id = 'card-' + q.id;
+
+      let html = `<div class="q-meta"><div class="q-num">${qGlobal}</div><div class="q-type">${q.type==='fill'?'穴埋め':'選択'}</div></div>`;
+
+      if (q.type === 'fill') {
+        let txt = q.text;
+        q.blanks.forEach(b => {
+          txt = txt.replace(/【　[①-⑩a-z]+　】/, `<input class="blank-input" id="input-${q.id}-${b.key}" type="text" placeholder="　　" style="width:${b.width||70}px">`);
+        });
+        html += `<div class="q-text">${txt.replace(/\n/g,'<br>')}</div>`;
+        if (q.note) html += `<div class="q-note">${q.note}</div>`;
+        html += `<button class="fill-submit" id="submit-${q.id}" onclick="checkFill('${q.id}')">確認する</button>`;
+      } else {
+        html += `<div class="q-text">${q.text}</div>`;
+        if (q.note) html += `<div class="q-note">${q.note}</div>`;
+        html += `<div class="choices" id="choices-${q.id}">`;
+        q.choices.forEach((c,ci) => {
+          html += `<button class="choice-btn" id="choice-${q.id}-${ci}" onclick="checkChoice('${q.id}',${ci})">${c}</button>`;
+        });
+        html += `</div>`;
+      }
+      html += `<div class="feedback" id="feedback-${q.id}"></div>`;
+      card.innerHTML = html;
+      container.appendChild(card);
+    });
+  });
+}
+
+// ── 穴埋めチェック ───────────────────────────
+function checkFill(qid) {
+  const q = findQ(qid);
+  if (!q) return;
+  const card = document.getElementById('card-'+qid);
+  const btn  = document.getElementById('submit-'+qid);
+  const fb   = document.getElementById('feedback-'+qid);
+  btn.disabled = true;
+  let allCorrect = true;
+  q.blanks.forEach(b => {
+    const input = document.getElementById(`input-${qid}-${b.key}`);
+    if (!input) return;
+    input.disabled = true;
+    const val = input.value.trim();
+    const accepted = b.accept || [b.answer];
+    const ok = accepted.some(a => norm(val) === norm(a));
+    input.classList.add(ok ? 'correct-input' : 'wrong-input');
+    if (!ok) allCorrect = false;
+  });
+  if (allCorrect) {
+    card.classList.add('answered-correct');
+    fb.className = 'feedback show correct-fb';
+    fb.innerHTML = `✅ <strong>正解！</strong> ${q.hint}`;
+    scores[qid] = true;
+  } else {
+    card.classList.add('answered-wrong');
+    fb.className = 'feedback show wrong-fb';
+    fb.innerHTML = `❌ <strong>正解：${q.blanks.map(b=>b.answer).join(' / ')}</strong>　${q.hint}`;
+    scores[qid] = false;
+    q.blanks.forEach(b => {
+      const input = document.getElementById(`input-${qid}-${b.key}`);
+      if (input && input.classList.contains('wrong-input')) {
+        input.value = b.answer;
+        input.classList.replace('wrong-input','correct-input');
+      }
+    });
+  }
+  updateProgress();
+}
+
+function norm(s) {
+  return s.replace(/\s/g,'')
+    .replace(/[０-９]/g, c=>String.fromCharCode(c.charCodeAt(0)-0xFEE0))
+    .replace(/（ゼロ）/,'').replace(/ゼロ/,'0');
+}
+
+// ── 選択問題チェック ────────────────────────
+function checkChoice(qid, selected) {
+  const q = findQ(qid);
+  if (!q || scores.hasOwnProperty(qid)) return;
+  const card = document.getElementById('card-'+qid);
+  const fb   = document.getElementById('feedback-'+qid);
+  const accepted = Array.isArray(q.answer) ? q.answer : [q.answer];
+  const isCorrect = accepted.includes(selected);
+
+  q.choices.forEach((_,ci) => {
+    const btn = document.getElementById(`choice-${qid}-${ci}`);
+    btn.disabled = true;
+    if (accepted.includes(ci)) btn.classList.add('reveal-correct');
+  });
+  document.getElementById(`choice-${qid}-${selected}`).classList.add(isCorrect?'selected-correct':'selected-wrong');
+  card.classList.add(isCorrect?'answered-correct':'answered-wrong');
+  scores[qid] = isCorrect;
+  if (isCorrect) {
+    fb.className = 'feedback show correct-fb';
+    fb.innerHTML = `✅ <strong>正解！</strong> ${q.hint}`;
+  } else {
+    const labels = accepted.map(i=>`「${q.choices[i]}」`).join('または');
+    fb.className = 'feedback show wrong-fb';
+    fb.innerHTML = `❌ <strong>正解は${labels}</strong>　${q.hint}`;
+  }
+  updateProgress();
+}
+
+// ── 一括採点 ────────────────────────────────
+function submitAll() {
+  questions.forEach(sec => {
+    sec.items.forEach(q => {
+      if (scores.hasOwnProperty(q.id)) return;
+      if (q.type === 'fill') {
+        checkFill(q.id);
+      } else {
+        scores[q.id] = false;
+        const card = document.getElementById('card-'+q.id);
+        const fb   = document.getElementById('feedback-'+q.id);
+        card.classList.add('answered-wrong');
+        const accepted = Array.isArray(q.answer) ? q.answer : [q.answer];
+        q.choices.forEach((_,ci) => {
+          const btn = document.getElementById(`choice-${q.id}-${ci}`);
+          btn.disabled = true;
+          if (accepted.includes(ci)) btn.classList.add('reveal-correct');
+        });
+        const labels = accepted.map(i=>`「${q.choices[i]}」`).join('または');
+        fb.className = 'feedback show wrong-fb';
+        fb.innerHTML = `❌ <strong>未回答。正解：${labels}</strong>　${q.hint}`;
+      }
+    });
+  });
+  // 記述未提出の場合は未完了扱い
+  if (!scores.hasOwnProperty('free')) {
+    scores['free'] = false;
+  }
+  updateProgress();
+  showResult();
+}
+
+// ── プログレス ──────────────────────────────
+function updateProgress() {
+  const answered = Object.keys(scores).filter(k=>k!=='free').length;
+  const total = questions.reduce((s,sec)=>s+sec.items.length,0);
+  document.getElementById('progress-fill').style.width = (answered/total*100)+'%';
+  document.getElementById('progress-text').textContent = `${answered} / ${total} 問回答済み`;
+}
+
+// ── タイマー ────────────────────────────────
+function startTimer() {
+  timerRunning = true;
+  timerInterval = setInterval(()=>{
+    if (!timerRunning) return;
+    timeLeft--;
+    const m = String(Math.floor(timeLeft/60)).padStart(2,'0');
+    const s = String(timeLeft%60).padStart(2,'0');
+    const el = document.getElementById('timer-display');
+    el.textContent = `${m}:${s}`;
+    el.className = timeLeft<=60?'danger':timeLeft<=180?'warning':'';
+    if (timeLeft<=0) { clearInterval(timerInterval); submitAll(); }
+  },1000);
+}
+
+document.getElementById('pause-btn').addEventListener('click', function(){
+  timerRunning = !timerRunning;
+  this.textContent = timerRunning ? '一時停止' : '▶ 再開';
+});
+
+// ── スタート ────────────────────────────────
+function startQuiz() {
+  document.getElementById('start-screen').style.display='none';
+  document.getElementById('quiz-area').classList.add('show');
+  document.getElementById('timer-bar').style.display='flex';
+  document.getElementById('progress-wrap').style.display='block';
+  buildQuiz();
+  startTimer();
+}
+
+// ── 結果表示 ────────────────────────────────
+function showResult() {
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('quiz-area').style.display='none';
+  document.getElementById('timer-bar').style.display='none';
+  document.getElementById('progress-wrap').style.display='none';
+
+  const total = questions.reduce((s,sec)=>s+sec.items.length,0);
+  const correct = Object.keys(scores).filter(k=>k!=='free'&&scores[k]).length;
+  const pct = Math.round(correct/total*100);
+
+  const deg = pct/100*360;
+  document.getElementById('result-ring').style.background =
+    `conic-gradient(var(--primary) ${deg}deg, var(--border) ${deg}deg)`;
+  document.getElementById('result-score').textContent = `${correct}/${total}`;
+
+  let title, msg;
+  if (pct>=90)      { title='🏆 優秀！完璧に理解できています！';   msg='地鶏研修の内容をしっかり吸収できています。\n塚田農場で働く意味、「命のリレー」の大切さが伝わっていますね。\n今日の学びを店舗でのおもてなしに活かしてください！'; }
+  else if (pct>=70) { title='✨ 合格！よく理解できています！';     msg='基本的な内容はしっかり理解できています。\n間違えた問題の解説を読み直して、完璧を目指しましょう！'; }
+  else if (pct>=50) { title='📖 もう少し！復習してみよう';        msg='半分以上は正解できました。\nビジネスモデルや命のリレーの流れを\nもう一度資料で確認してみましょう。'; }
+  else              { title='🔄 研修資料を見直してみよう！';       msg='難しかった部分がいくつかあったようです。\n焦らず研修資料を読み直して、再挑戦してみてください！'; }
+
+  document.getElementById('result-title').textContent = title;
+  document.getElementById('result-msg').textContent = msg;
+
+  let bdHTML = '<div class="rb-title">セクション別結果</div>';
+  questions.forEach(sec => {
+    const sc = sec.items.filter(q=>scores[q.id]).length;
+    const st = sec.items.length;
+    bdHTML += `<div class="rb-row"><span>${sec.section}</span><span class="${sc===st?'rb-correct':'rb-wrong'}">${sc}/${st}</span></div>`;
+  });
+  // 記述問題の結果
+  const freeResult = scores['free'];
+  bdHTML += `<div class="rb-row"><span>✍️ 記述（いただきますの意味）</span><span class="${freeResult?'rb-correct':'rb-wrong'}">${freeResult?'✅ しっかり語れた！':'📝 もう少し書いてみよう'}</span></div>`;
+  document.getElementById('result-breakdown').innerHTML = bdHTML;
+
+  document.getElementById('result-screen').classList.add('show');
+  window.scrollTo(0,0);
+}
+
+// ── リトライ ────────────────────────────────
+function retryQuiz() {
+  scores = {};
+  timeLeft = TOTAL_TIME;
+  clearInterval(timerInterval);
+  timerRunning = false;
+  document.getElementById('result-screen').classList.remove('show');
+  const qa = document.getElementById('quiz-area');
+  qa.classList.remove('show'); qa.style.display='';
+  document.getElementById('timer-bar').style.display='none';
+  document.getElementById('progress-wrap').style.display='none';
+  document.getElementById('timer-display').textContent='10:00';
+  document.getElementById('timer-display').className='';
+  document.getElementById('pause-btn').textContent='一時停止';
+  // 記述問題リセット
+  document.getElementById('free-answer').value='';
+  document.getElementById('free-answer').disabled=false;
+  document.getElementById('free-submit-btn').disabled=true;
+  document.getElementById('char-counter').textContent=`0 / ${FREE_MIN_CHARS}文字`;
+  document.getElementById('char-counter').className='char-counter';
+  document.getElementById('free-feedback').className='free-feedback';
+  document.getElementById('card-free').className='q-card';
+  document.getElementById('start-screen').style.display='block';
+}
+
+function findQ(qid) {
+  for (const sec of questions) for (const q of sec.items) if (q.id===qid) return q;
+  return null;
+}
+</script>
+</body>
+</html>
